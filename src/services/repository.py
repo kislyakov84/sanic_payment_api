@@ -49,7 +49,7 @@ class SQLAlchemyRepository(AbstractRepository, Generic[ModelType]):
     async def create(self, **data) -> ModelType:
         stmt = insert(self.model).values(**data).returning(self.model)
         result = await self.session.execute(stmt)
-        await self.session.commit()
+        # await self.session.commit()
         return result.scalar_one()
 
     async def update(self, pk: Any, **data) -> ModelType | None:
@@ -60,10 +60,10 @@ class SQLAlchemyRepository(AbstractRepository, Generic[ModelType]):
             .returning(self.model)
         )
         result = await self.session.execute(stmt)
-        await self.session.commit()
+        # await self.session.commit()
         return result.scalar_one_or_none()
 
     async def delete(self, **filter_by) -> None:
         stmt = delete(self.model).filter_by(**filter_by)
         await self.session.execute(stmt)
-        await self.session.commit()
+        # await self.session.commit()

@@ -55,13 +55,11 @@ class PaymentService:
             account = await self.account_repo.create(user_id=data["user_id"])
 
         # 4. Сохраняем транзакцию и начисляем средства
-        # Важно: это должно быть в одной транзакции SQLAlchemy,
-        # но т.к. commit() в репозитории делается после каждой операции,
-        # нам нужно это переделать для атомарности.
-        # Для тестового задания оставим так, но это точка роста.
-
         # Начисляем средства
         account.balance += Decimal(data["amount"])
+        self.session.add(
+            account
+        )  # Добавляем измененный объект в сессию для отслеживания
 
         # Сохраняем платеж
         await self.payment_repo.create(
@@ -69,4 +67,5 @@ class PaymentService:
             amount=Decimal(data["amount"]),
             account_id=account.id,
         )
-        await self.session.commit()  # коммитим оба изменения
+        # А вот теперь коммитим все изменения ОДНОЙ транзакцией
+        await self.session.commit()
