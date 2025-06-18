@@ -14,7 +14,7 @@ def protected(admin_only: bool = False):
     def decorator(f: Callable):
         @wraps(f)
         async def decorated_function(request: Request, *args, **kwargs):
-            # 1. Получаем сессию из контекста, как и раньше
+            # 1. Получаем сессию из контекста
             session: AsyncSession = request.ctx.session
 
             # 2. Проверяем токен
@@ -30,12 +30,16 @@ def protected(admin_only: bool = False):
             # 3. Находим пользователя
             email = token_data["sub"]
             user_service = UserService(session)
-            user = await user_service.get_user_by_email(email=email)
+
+            user: User | None = await user_service.get_user_by_email(email=email)
+
             if user is None:
                 raise Unauthorized("User not found")
 
             # 4. Проверяем права администратора, если требуется
-            if admin_only and not user.is_admin:
+            # --- ИСПРАВЛЕНО (еще раз!) ---
+            # Используем явное сравнение, чтобы помочь Pylance
+            if admin_only and user.is_admin is False:
                 raise Forbidden("You do not have permission to access this resource")
 
             # 5. КЛАДЕМ пользователя в контекст запроса
