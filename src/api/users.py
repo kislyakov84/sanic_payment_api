@@ -1,25 +1,19 @@
 from datetime import timedelta
-
-# from typing import Annotated
-
 from sanic import Blueprint, Request, json
 from sanic.exceptions import Unauthorized, NotFound
+from sqlalchemy.ext.asyncio import AsyncSession  # <--- ДОБАВЛЕНО
 
-# from sqlalchemy.ext.asyncio import AsyncSession
-
-from src.api.schemas import UserCreate, UserPublic, UserWithAccounts
-
-# from src.core.database import get_async_session
-from src.core.security import create_access_token, verify_password
-from src.services.users import UserService
-
-# from src.api.dependencies import get_current_user
 from src.api.dependencies import protected
-from src.api.schemas import AccountPublic  # Нам понадобится эта схема
-
+from src.api.schemas import (  # <--- ВСЕ СХЕМЫ СОБРАНЫ ВМЕСТЕ
+    AccountPublic,
+    UserCreate,
+    UserPublic,
+    UserUpdate,
+    UserWithAccounts,
+)
+from src.core.security import create_access_token, verify_password
 from src.models.tables import User
-
-from src.api.schemas import UserUpdate, UserWithAccounts
+from src.services.users import UserService
 
 # Создаем Blueprint для пользователей
 # url_prefix добавит '/users' ко всем роутам в этом файле

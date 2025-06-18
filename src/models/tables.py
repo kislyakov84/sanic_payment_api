@@ -1,25 +1,28 @@
+from decimal import Decimal
 import sqlalchemy as sa
-from sqlalchemy.orm import relationship
+
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from src.core.database import Base
 
-# Важно: Numeric используется для денег, чтобы избежать проблем с плавающей точкой
-# у типа Float. precision - общее кол-во цифр, scale - кол-во цифр после запятой.
 Money = sa.Numeric(precision=10, scale=2)
 
 
 class User(Base):
     __tablename__ = "users"
 
-    id = sa.Column(sa.Integer, primary_key=True, index=True)
-    email = sa.Column(sa.String, unique=True, index=True, nullable=False)
-    full_name = sa.Column(sa.String, nullable=True)
-    hashed_password = sa.Column(sa.String, nullable=False)
-    is_admin = sa.Column(sa.Boolean, default=False, nullable=False)
+    # Используем Mapped и mapped_column для явного указания типов
+    # id будет унаследован от Base
+    email: Mapped[str] = mapped_column(
+        sa.String, unique=True, index=True, nullable=False
+    )
+    full_name: Mapped[str | None] = mapped_column(sa.String)
+    hashed_password: Mapped[str] = mapped_column(sa.String, nullable=False)
+    is_admin: Mapped[bool] = mapped_column(sa.Boolean, default=False, nullable=False)
 
-    # Связь с таблицей счетов
-    accounts = relationship("Account", back_populates="user")
+    # Связи остаются прежними
+    accounts: Mapped[list["Account"]] = relationship(back_populates="user")
 
     def __repr__(self):
         return f"<User(id={self.id}, email='{self.email}')>"
@@ -28,13 +31,16 @@ class User(Base):
 class Account(Base):
     __tablename__ = "accounts"
 
-    id = sa.Column(sa.Integer, primary_key=True, index=True)
-    balance = sa.Column(Money, nullable=False, server_default="0.00")
-    user_id = sa.Column(sa.Integer, sa.ForeignKey("users.id"), nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    # Вот ключевое изменение для Pylance!
+    # Он теперь знает, что balance у экземпляра - это Decimal.
+    balance: Mapped[Decimal] = mapped_column(
+        Money, nullable=False, server_default="0.00"
+    )
+    user_id: Mapped[int] = mapped_column(sa.ForeignKey("users.id"), nullable=False)
 
-    # Связь с пользователем и платежами
-    user = relationship("User", back_populates="accounts")
-    payments = relationship("Payment", back_populates="account")
+    user: Mapped["User"] = relationship(back_populates="accounts")
+    payments: Mapped[list["Payment"]] = relationship(back_populates="account")
 
     def __repr__(self):
         return (
@@ -45,15 +51,19 @@ class Account(Base):
 class Payment(Base):
     __tablename__ = "payments"
 
-    id = sa.Column(sa.Integer, primary_key=True, index=True)
-    # UUID из внешней системы, должен быть уникальным
-    transaction_id = sa.Column(sa.String, unique=True, index=True, nullable=False)
-    amount = sa.Column(Money, nullable=False)
-    account_id = sa.Column(sa.Integer, sa.ForeignKey("accounts.id"), nullable=False)
-    created_at = sa.Column(sa.TIMESTAMP, server_default=func.now(), nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    transaction_id: Mapped[str] = mapped_column(
+        sa.String, unique=True, index=True, nullable=False
+    )
+    amount: Mapped[Decimal] = mapped_column(Money, nullable=False)
+    account_id: Mapped[int] = mapped_column(
+        sa.ForeignKey("accounts.id"), nullable=False
+    )
+    created_at: Mapped[sa.DateTime] = mapped_column(
+        sa.TIMESTAMP, server_default=func.now(), nullable=False
+    )
 
-    # Связь со счетом
-    account = relationship("Account", back_populates="payments")
+    account: Mapped["Account"] = relationship(back_populates="payments")
 
     def __repr__(self):
         return f"<Payment(id={self.id}, transaction_id='{self.transaction_id}', amount={self.amount})>"

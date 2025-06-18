@@ -1,6 +1,5 @@
 from sanic import Sanic
 from sanic.response import json
-from sqlalchemy.ext.asyncio import AsyncSession
 
 # Импортируем нашу "фабрику" сессий
 from src.core.database import async_session_maker
