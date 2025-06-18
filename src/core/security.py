@@ -44,5 +44,8 @@ def decode_access_token(token: str) -> dict[str, Any] | None:
             token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
         )
         return payload
-    except JWTError:
+    except JWTError as e:
+        # ----> ВОТ НАШ ОТЛАДОЧНЫЙ КОД <----
+        print(f"!!! JWT Error: {e}")
+        # ----------------------------------
         return None
